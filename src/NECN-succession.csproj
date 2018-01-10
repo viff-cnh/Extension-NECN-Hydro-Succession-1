@@ -27,7 +27,5 @@
       <SpecificVersion>False</SpecificVersion>
       <HintPath>bin\debug\Landis.Library.Succession-vAGB-Input.dll</HintPath> -->
 
-
   </ItemGroup>
-  </PropertyGroup>
 </Project>
