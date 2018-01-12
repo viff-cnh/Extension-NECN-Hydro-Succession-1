@@ -9,6 +9,9 @@
     <Reference Include="Edu.Wisc.Forest.Flel.Util">
       <HintPath>..\lib\Edu.Wisc.Forest.Flel.Util.dll</HintPath>
     </Reference>
+    <Reference Include="Landis.Library.Succession-vAGB-Input">
+      <HintPath>..\lib\Landis.Library.Succession-vAGB-Input.dll</HintPath>
+    </Reference>
     <PackageReference Include="Landis.Core" Version="1.0.0-CI00001" />
     <PackageReference Include="Landis.Library.AgeOnlyCohorts" Version="1.0.0-CI00001" />
     <PackageReference Include="Landis.Library.Biomass-v1.0.1" Version="1.0.0-CI00001" />
@@ -19,12 +22,6 @@
     <PackageReference Include="Landis.Library.Metadata" Version="1.0.0-CI00002" />
     <PackageReference Include="Landis.SpatialModeling" Version="1.0.0-CI00001" />
     <PackageReference Include="Troschuetz.Random" Version="4.2.0" />
-
-    <PackageReference Include="Landis.Library.Succession-v5" Version="1.0.0-CI00002" />
-
-    <!-- <Reference Include="Landis.Library.Succession-vAGB-Input, Version=4.0.6208.18921, Culture=neutral, processorArchitecture=MSIL">
-      <SpecificVersion>False</SpecificVersion>
-      <HintPath>bin\debug\Landis.Library.Succession-vAGB-Input.dll</HintPath> -->
 
   </ItemGroup>
 </Project>
