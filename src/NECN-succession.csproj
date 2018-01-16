@@ -15,10 +15,11 @@
     <PackageReference Include="Landis.Library.Metadata" Version="1.0.0-CI00002" />
     <PackageReference Include="Landis.SpatialModeling" Version="1.0.0-CI00001" />
     <PackageReference Include="Troschuetz.Random" Version="4.2.0" />
-
     <PackageReference Include="Landis.Library.BiomassCohorts-v2" Version="1.0.0-CI00007" />
     <PackageReference Include="Landis.Library.Climate-beta1.1" Version="1.0.0-CI00003" />
     <PackageReference Include="Landis.Library.AgeOnlyCohorts" Version="1.0.0-CI00003" />
+    
+    <!-- Use Nuget packages with Succession-vAGB dependency for NECN-Hydro scenario otherwise use Succession-v5 -->
     <PackageReference Include="Landis.Library.Succession-vAGB-Input" Version="1.0.0" />
     <PackageReference Include="Landis.Library.Biomass-v1.0.1" Version="1.0.0" />
   </ItemGroup>
