@@ -462,20 +462,33 @@ namespace Landis.Extension.Succession.NECN_Hydro
 
             CalibrateLog.AutoFlush = true;
 
+            //CalibrateLog.Write("Year, Month, EcoregionIndex, SpeciesName, CohortAge, CohortWoodB, CohortLeafB, ");  // from ComputeChange
+            //CalibrateLog.Write("MortalityAGEwood, MortalityAGEleaf, ");  // from ComputeAgeMortality
+            //CalibrateLog.Write("MortalityBIOwood, MortalityBIOleaf, ");  // from ComputeGrowthMortality
+            //CalibrateLog.Write("availableWater,");  //from Water_limit
+            //CalibrateLog.Write("LAI,tlai,rlai,");  // from ComputeChange
+            //CalibrateLog.Write("mineralNalloc, resorbedNalloc, ");  // from calculateN_Limit
+            ////CalibrateLog.Write("limitLAI, limitH20, limitT, limitCapacity, limitN, ");  //from ComputeActualANPP
+            //CalibrateLog.Write("limitLAI, limitH20, limitT, limitN, ");  //from ComputeActualANPP
+            //CalibrateLog.Write("maxNPP, Bmax, Bsite, Bcohort, soilTemp, ");  //from ComputeActualANPP
+            //CalibrateLog.Write("actualWoodNPP, actualLeafNPP, ");  //from ComputeActualANPP
+            //CalibrateLog.Write("NPPwood, NPPleaf, ");  //from ComputeNPPcarbon
+            //CalibrateLog.Write("resorbedNused, mineralNused, Ndemand,");  // from AdjustAvailableN
+            //CalibrateLog.WriteLine("deltaWood, deltaLeaf, totalMortalityWood, totalMortalityLeaf, ");  // from ComputeChange
+
+
             CalibrateLog.Write("Year, Month, EcoregionIndex, SpeciesName, CohortAge, CohortWoodB, CohortLeafB, ");  // from ComputeChange
             CalibrateLog.Write("MortalityAGEwood, MortalityAGEleaf, ");  // from ComputeAgeMortality
-            CalibrateLog.Write("MortalityBIOwood, MortalityBIOleaf, ");  // from ComputeGrowthMortality
             CalibrateLog.Write("availableWater,");  //from Water_limit
             CalibrateLog.Write("LAI,tlai,rlai,");  // from ComputeChange
             CalibrateLog.Write("mineralNalloc, resorbedNalloc, ");  // from calculateN_Limit
-            //CalibrateLog.Write("limitLAI, limitH20, limitT, limitCapacity, limitN, ");  //from ComputeActualANPP
             CalibrateLog.Write("limitLAI, limitH20, limitT, limitN, ");  //from ComputeActualANPP
             CalibrateLog.Write("maxNPP, Bmax, Bsite, Bcohort, soilTemp, ");  //from ComputeActualANPP
             CalibrateLog.Write("actualWoodNPP, actualLeafNPP, ");  //from ComputeActualANPP
+            CalibrateLog.Write("MortalityBIOwood, MortalityBIOleaf, ");  // from ComputeGrowthMortality
             CalibrateLog.Write("NPPwood, NPPleaf, ");  //from ComputeNPPcarbon
             CalibrateLog.Write("resorbedNused, mineralNused, Ndemand,");  // from AdjustAvailableN
             CalibrateLog.WriteLine("deltaWood, deltaLeaf, totalMortalityWood, totalMortalityLeaf, ");  // from ComputeChange
-                        
             
 
         }
