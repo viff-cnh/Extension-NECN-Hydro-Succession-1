@@ -60,14 +60,18 @@ namespace Landis.Extension.Succession.NECN_Hydro
             // Age-related mortality includes woody and standing leaf biomass.
             double[] mortalityAge = ComputeAgeMortality(cohort, site);
 
-            //  Growth-related mortality
-            double[] mortalityGrowth = ComputeGrowthMortality(cohort, site);
-
-            double[] totalMortality = new double[2]{Math.Min(cohort.WoodBiomass, mortalityAge[0] + mortalityGrowth[0]), Math.Min(cohort.LeafBiomass, mortalityAge[1] + mortalityGrowth[1])};
-            double nonDisturbanceLeafFall = totalMortality[1];
-
             // ****** Growth *******
             double[] actualANPP = ComputeActualANPP(cohort, site, siteBiomass, mortalityAge);
+
+            //  Growth-related mortality
+            //double[] mortalityGrowth = ComputeGrowthMortality(cohort, site);
+            double[] mortalityGrowth = ComputeGrowthMortality(cohort, site, siteBiomass, actualANPP);  //New code added by ML to simulate increase in mortality as approaches max biomass
+
+            double[] totalMortality = new double[2]{Math.Min(cohort.WoodBiomass, mortalityAge[0] + mortalityGrowth[0]), Math.Min(cohort.LeafBiomass, mortalityAge[1] + mortalityGrowth[1])};
+
+            double nonDisturbanceLeafFall = totalMortality[1];
+
+            //double[] actualANPP = ComputeActualANPP(cohort, site, siteBiomass, mortalityAge);
             
             double scorch = 0.0;
             defoliatedLeafBiomass = 0.0;
@@ -108,12 +112,6 @@ namespace Landis.Extension.Succession.NECN_Hydro
                 defoliatedLeafBiomass = 0.0;
             }
 
-            // RMS 03/2016: Additional mortality as reaching capacity limit:  SAVE FOR NEXT RELEASE
-            //double maxBiomass = SpeciesData.B_MAX_Spp[cohort.Species][ecoregion];
-            //double limitCapacity = Math.Min(1.0, Math.Exp(siteBiomass / maxBiomass * 5.0) / Math.Exp(5.0));  // 1.0 = total limit; 0.0 = No limit
-            //totalMortality[0] += (actualANPP[0] * limitCapacity); // totalMortality not to exceed ANPP allocation
-
-
             if (totalMortality[0] <= 0.0 || cohort.WoodBiomass <= 0.0)
                 totalMortality[0] = 0.0;
 
@@ -140,9 +138,6 @@ namespace Landis.Extension.Succession.NECN_Hydro
 
             float[] deltas = new float[2] { deltaWood, deltaLeaf };
 
-            //if((totalMortality[1] + defoliatedLeafBiomass) > cohort.LeafBiomass)
-            //   PlugIn.ModelCore.UI.WriteLine("Warning: Leaf Mortality exceeds cohort leaf biomass. M={0:0.0}, B={1:0.0}, DefoLeafBiomass={2:0.0}, defoliationIndex={3:0.0}", totalMortality[1], cohort.LeafBiomass, defoliatedLeafBiomass, defoliation);
-            
             UpdateDeadBiomass(cohort, site, totalMortality);
 
             CalculateNPPcarbon(site, cohort, actualANPP);
@@ -152,7 +147,6 @@ namespace Landis.Extension.Succession.NECN_Hydro
             if (OtherData.CalibrateMode && PlugIn.ModelCore.CurrentTime > 0)
             {
                 Outputs.CalibrateLog.WriteLine("{0:0.00},{1:0.00},{2:0.00},{3:0.00},", deltaWood, deltaLeaf, totalMortality[0], totalMortality[1]);
-                //Outputs.CalibrateLog.WriteLine("{0:0.00}, {1:0.00}, {2:0.00}", resorbedNused, mineralNused, totalNdemand);
             }
 
             return deltas;
@@ -178,23 +172,16 @@ namespace Landis.Extension.Succession.NECN_Hydro
 
             double limitLAI = calculateLAI_Limit(cohort, site);
 
-            // RMS 03/2016: Testing alternative more similar to how Biomass Succession operates: REMOVE FOR NEXT RELEASE
-            double limitCapacity = 1.0 - Math.Min(1.0, Math.Exp(siteBiomass / maxBiomass * 5.0) / Math.Exp(5.0));
+            // Removed capacity limit and altered growth mortality to limit biomass instead.  -ML & RS in 1/2018
+            //double limitCapacity = 1.0 - Math.Min(1.0, Math.Exp(siteBiomass / maxBiomass * 5.0) / Math.Exp(5.0));
 
-            //double potentialNPP = maxNPP * limitLAI * limitH20 * limitT; // * limitCapacity;
-            double potentialNPP = maxNPP * limitLAI * limitH20 * limitT * limitCapacity;
+            double potentialNPP_NoN = maxNPP * limitLAI * limitH20 * limitT; // * limitCapacity;
+            //double potentialNPP = maxNPP * limitLAI * limitH20 * limitT * limitCapacity;
 
-            double limitN = calculateN_Limit(site, cohort, potentialNPP, leafFractionNPP);
+            double limitN = calculateN_Limit(site, cohort, potentialNPP_NoN, leafFractionNPP);
 
-            potentialNPP *= limitN;
-
-            //if (Double.IsNaN(limitT) || Double.IsNaN(limitH20) || Double.IsNaN(limitLAI) || Double.IsNaN(limitCapacity) || Double.IsNaN(limitN))
-            //{
-            //    PlugIn.ModelCore.UI.WriteLine("  A limit = NaN!  Will set to zero.");
-            //    PlugIn.ModelCore.UI.WriteLine("  Yr={0},Mo={1}.     GROWTH LIMITS: LAI={2:0.00}, H20={3:0.00}, N={4:0.00}, T={5:0.00}, Capacity={6:0.0}", PlugIn.ModelCore.CurrentTime, month + 1, limitLAI, limitH20, limitN, limitT, limitCapacity);
-            //    PlugIn.ModelCore.UI.WriteLine("  Yr={0},Mo={1}.     Other Information: MaxB={2}, Bsite={3}, Bcohort={4:0.0}, SoilT={5:0.0}.", PlugIn.ModelCore.CurrentTime, month + 1, maxBiomass, (int)siteBiomass, (cohort.WoodBiomass + cohort.LeafBiomass), SiteVars.SoilTemperature[site]);
-            //}
-
+            //potentialNPP *= limitN;
+            double potentialNPP = potentialNPP_NoN * limitN;
 
             //  Age mortality is discounted from ANPP to prevent the over-
             //  estimation of growth.  ANPP cannot be negative.
@@ -211,10 +198,10 @@ namespace Landis.Extension.Succession.NECN_Hydro
 
             double leafNPP  = actualANPP * leafFractionNPP;
             double woodNPP  = actualANPP * (1.0 - leafFractionNPP);
+
+            //PlugIn.ModelCore.UI.WriteLine("leafFractionNPP={0:0.00}, leafNPP={1:0.00}, woodNPP={2:0.00}.", leafFractionNPP, leafNPP, woodNPP);
                         
             if (Double.IsNaN(leafNPP) || Double.IsNaN(woodNPP))
-
-
 
             {
                 PlugIn.ModelCore.UI.WriteLine("  EITHER WOOD or LEAF NPP = NaN!  Will set to zero.");
@@ -235,7 +222,7 @@ namespace Landis.Extension.Succession.NECN_Hydro
                 Outputs.CalibrateLog.Write("{0},{1},{2},{3:0.0},{4:0.0},", maxNPP, maxBiomass, (int)siteBiomass, (cohort.WoodBiomass + cohort.LeafBiomass), SiteVars.SoilTemperature[site]);
                 Outputs.CalibrateLog.Write("{0:0.00},{1:0.00},", woodNPP, leafNPP);
             }
-                        
+       
             return new double[2]{woodNPP, leafNPP};
 
         }
@@ -288,15 +275,27 @@ namespace Landis.Extension.Succession.NECN_Hydro
         //---------------------------------------------------------------------
 
         /// <summary>
-        /// Monthly mortality as a function of standing leaf and wood biomass.
+        /// Monthly mortality as a function of standing leaf and wood biomass.  Modified in 1/18 by ML & RS.
         /// </summary>
-        private double[] ComputeGrowthMortality(ICohort cohort, ActiveSite site)
+        //private double[] ComputeGrowthMortality(ICohort cohort, ActiveSite site)
+            private double[] ComputeGrowthMortality(ICohort cohort, ActiveSite site, double siteBiomass, double[] AGNPP)
         {
-            //if(cohort.WoodBiomass <= 0 || cohort.LeafBiomass <= 0)
-            //    return (new double[2]{0.0, 0.0});
+  
+            double maxBiomass = SpeciesData.Max_Biomass[cohort.Species];
+            //double NPPwood = (double)AGNPP[0] * 0.47;
+            double NPPwood = (double)AGNPP[0];
 
-            double M_wood = cohort.WoodBiomass * FunctionalType.Table[SpeciesData.FuncType[cohort.Species]].MonthlyWoodMortality;
+            //double M_wood_input = cohort.WoodBiomass * FunctionalType.Table[SpeciesData.FuncType[cohort.Species]].MonthlyWoodMortality;
             double M_leaf = 0.0;
+
+            double relativeBiomass = siteBiomass / maxBiomass;
+            double M_constant = 5.0;  //This constant controls the rate of change of mortality with NPP
+
+            //Functon which calculates an adjustment factor for mortality that ranges from 0 to 1 and exponentially increases with relative biomass.
+            double M_wood_relative = Math.Max(0.0,(Math.Exp(M_constant * relativeBiomass) - 1) / (Math.Exp(M_constant) - 1));
+
+            //This function calculates mortality as a function of NPP 
+            double M_wood = NPPwood * M_wood_relative;
 
             // Leaves and Needles dropped.
             if(SpeciesData.LeafLongevity[cohort.Species] > 1.0) 
@@ -317,7 +316,10 @@ namespace Landis.Extension.Succession.NECN_Hydro
                 }
             }
 
+           
             double[] M_BIO = new double[2]{M_wood, M_leaf};
+
+            //PlugIn.ModelCore.UI.WriteLine("NPPwood={0:0.00}, M_wood={1:0.00}, M_wood_relative={2:0.00}.", NPPwood, M_wood, M_wood_relative);
 
             if(M_wood < 0.0 || M_leaf < 0.0)
             {
@@ -535,7 +537,10 @@ namespace Landis.Extension.Succession.NECN_Hydro
                 rlai = 1.0;
             }
 
-            double tlai = maxlai * largeWoodC/(klai + largeWoodC);
+            double tlai =(maxlai * largeWoodC)/(klai + largeWoodC);
+
+            //PlugIn.ModelCore.UI.WriteLine("maxlai={0}, largeWoodC={1}, klai={2}, tlai={3:0.00}.", maxlai, largeWoodC, klai, tlai);
+
 
             //...Choose the LAI reducer on production.  I don't really understand
             //     why we take the average in the first case, but it will probably
