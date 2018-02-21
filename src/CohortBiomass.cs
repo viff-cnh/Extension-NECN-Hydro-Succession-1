@@ -575,7 +575,18 @@ namespace Landis.Extension.Succession.NECN_Hydro
 
             if(Main.Month == 6)
                 SiteVars.LAI[site] += lai; //Tracking LAI.
+            
+            // **************************************************************
+            // LAI Limit from older cohorts:
+            // double current_other_LAI = SiteVars.LAI_Monthly[site];
+            
+            // RMS:LAI
+            // double LAI_limit_other = BEER'S LAW EQUATION HERE using current_other_LAI
+            // SiteVars.LAI_Monthly[site] += lai;
 
+
+            // **************************************************************
+            // LAI Limit from the cohort itself:
             double LAI_limit = Math.Max(0.0, 1.0 - Math.Exp(laitop * lai));
 
             //This allows LAI to go to zero for deciduous trees.
@@ -589,6 +600,10 @@ namespace Landis.Extension.Succession.NECN_Hydro
 
             if (PlugIn.ModelCore.CurrentTime > 0 && OtherData.CalibrateMode)
                 Outputs.CalibrateLog.Write("{0:0.00},{1:0.00},{2:0.00},", lai, tlai, rlai);
+                
+            // **********************************************************
+            // RMS:LAI:  Combine the two LAI limits here.  
+            // ?? Multiply the two limits?  User the largest?  Other?
 
 
             //PlugIn.ModelCore.UI.WriteLine("Yr={0},Mo={1}. Spp={2}, leafC={3:0.0}, woodC={4:0.00}.", PlugIn.ModelCore.CurrentTime, month + 1, species.Name, leafC, largeWoodC);
