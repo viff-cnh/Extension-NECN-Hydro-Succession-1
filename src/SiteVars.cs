@@ -52,6 +52,7 @@ namespace Landis.Extension.Succession.NECN_Hydro
         private static ISiteVar<Layer> sourceSink;
         
         // Other variables:
+        //RMS:LAI public static ISiteVar<double> LAI_Monthly;
         private static ISiteVar<double> mineralN;
         private static ISiteVar<double> resorbedN;
         private static ISiteVar<double> waterMovement;  
@@ -143,6 +144,7 @@ namespace Landis.Extension.Succession.NECN_Hydro
             sourceSink          = PlugIn.ModelCore.Landscape.NewSiteVar<Layer>();
             
             // Other variables
+            //RMS:LAI LAI_Monthly  = PlugIn.ModelCore.Landscape.NewSiteVar<double>();
             mineralN            = PlugIn.ModelCore.Landscape.NewSiteVar<double>();
             resorbedN           = PlugIn.ModelCore.Landscape.NewSiteVar<double>();
             waterMovement       = PlugIn.ModelCore.Landscape.NewSiteVar<double>();
