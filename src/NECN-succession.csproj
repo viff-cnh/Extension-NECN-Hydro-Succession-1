@@ -16,11 +16,11 @@
     
     <!-- Use Nuget packages with Succession-vAGB dependency for NECN-Hydro scenario -->
     <PackageReference Include="Landis.Library.Succession" Version="1.0.0-CI00002" />
-    <PackageReference Include="Landis.Library.Biomass-v1.0.1" Version="1.0.0-CI00005" />
     <PackageReference Include="Landis.Core" Version="1.0.0-CI00002" />
     <PackageReference Include="Landis.SpatialModeling" Version="1.0.0-CI00003" />
     <PackageReference Include="Landis.Library.Cohorts" Version="1.0.0-CI00002" />
     <PackageReference Include="Landis.Library.LeafBiomassCohorts-v1.0.1" Version="1.0.0-CI00001" />
     <PackageReference Include="Landis.Library.Metadata" Version="1.0.0-CI00003" />
+    <PackageReference Include="Landis.Library.Biomass-v1.0.1" Version="1.0.0-CI00005" />
   </ItemGroup>
 </Project>
