@@ -24,6 +24,8 @@ bld/
 
 # Viff scenario runs
 [Hh]istoric_Climate/
+deploy/[Aa]ll_extensions_PennState/
+deploy/[Aa]ll_extensions_PennState.*
 
 # Visual Studio 2015 cache/options directory
 .vs/
