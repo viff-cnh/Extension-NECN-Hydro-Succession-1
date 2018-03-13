@@ -80,6 +80,7 @@ namespace Landis.Extension.Succession.NECN_Hydro
         private static ISiteVar<double[]> monthlyBGNPPC;
         private static ISiteVar<double[]> monthlyNEE;
         private static ISiteVar<double[]> monthlyStreamN;
+        private static ISiteVar<double[]> monthlyLAI;
         public static ISiteVar<double> AnnualNEE;
         public static ISiteVar<double> FireCEfflux;
         public static ISiteVar<double> FireNEfflux;
@@ -144,7 +145,7 @@ namespace Landis.Extension.Succession.NECN_Hydro
             sourceSink          = PlugIn.ModelCore.Landscape.NewSiteVar<Layer>();
             
             // Other variables
-            //RMS:LAI LAI_Monthly  = PlugIn.ModelCore.Landscape.NewSiteVar<double>();
+            monthlyLAI          = PlugIn.ModelCore.Landscape.NewSiteVar<double[]>();
             mineralN            = PlugIn.ModelCore.Landscape.NewSiteVar<double>();
             resorbedN           = PlugIn.ModelCore.Landscape.NewSiteVar<double>();
             waterMovement       = PlugIn.ModelCore.Landscape.NewSiteVar<double>();
@@ -220,6 +221,7 @@ namespace Landis.Extension.Succession.NECN_Hydro
                 monthlyBGNPPC[site]           = new double[12];
                 monthlyNEE[site]            = new double[12];
                 monthlyStreamN[site]         = new double[12];
+                monthlyLAI[site]            = new double[12];
                 monthlyResp[site]           = new double[12];
                 //monthlymineralN[site]       = new double[12];
 
@@ -939,6 +941,21 @@ namespace Landis.Extension.Succession.NECN_Hydro
             }
 
 
+        }
+
+        /// <summary>
+        /// A summary of Monthly LAI
+        /// </summary>
+        public static ISiteVar<double[]> MonthlyLAI
+        {
+            get
+            {
+                return monthlyLAI;
+            }
+            set
+            {
+                monthlyLAI = value;
+            }
         }
         //---------------------------------------------------------------------
         /// <summary>

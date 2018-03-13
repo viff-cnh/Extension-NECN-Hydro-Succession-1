@@ -69,6 +69,7 @@ namespace Landis.Extension.Succession.NECN_Hydro
                     SiteVars.MonthlyNEE[site][Month] = 0.0;
                     SiteVars.MonthlyResp[site][Month] = 0.0;
                     SiteVars.MonthlyStreamN[site][Month] = 0.0;
+                    SiteVars.MonthlyLAI[site][Month] = 0.0;
                     SiteVars.SourceSink[site].Carbon = 0.0;
                     SiteVars.TotalWoodBiomass[site] = Main.ComputeWoodBiomass((ActiveSite) site);
                     //SiteVars.LAI[site] = Century.ComputeLAI((ActiveSite)site);
