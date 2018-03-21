@@ -621,7 +621,7 @@ namespace Landis.Extension.Succession.NECN_Hydro
 
         private static double calculateCompetition_Limit(ICohort cohort, ActiveSite site)
         {      
-           double k = -0.1;  // This is the value given for all temperature ecosystems
+           double k = -0.14;  // This is the value given for all temperature ecosystems. Istarted with 0.1
            double monthly_cumulative_LAI = SiteVars.MonthlyLAI[site][Main.Month];
            double competition_limit = Math.Max(0.0, Math.Exp(k * monthly_cumulative_LAI));
 
