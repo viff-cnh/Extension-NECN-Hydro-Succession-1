@@ -39,6 +39,7 @@ namespace Landis.Extension.Succession.NECN_Hydro
                 //PlugIn.ModelCore.UI.WriteLine("PlugIn_FutureClimateBaseYear={0}, y={1}, ModelCore_CurrentTime={2}, CenturyTimeStep = {3}, SimulatedYear = {4}.", PlugIn.FutureClimateBaseYear, y, PlugIn.ModelCore.CurrentTime, years, (PlugIn.FutureClimateBaseYear + y - years + PlugIn.ModelCore.CurrentTime));
 
                 SiteVars.ResetAnnualValues(site);
+                // RMS:LAI SiteVars.LAI_Monthly[site] = 0.0;
 
                 if(y == 0 && SiteVars.FireSeverity != null && SiteVars.FireSeverity[site] > 0)
                     FireEffects.ReduceLayers(SiteVars.FireSeverity[site], site);
@@ -68,6 +69,7 @@ namespace Landis.Extension.Succession.NECN_Hydro
                     SiteVars.MonthlyNEE[site][Month] = 0.0;
                     SiteVars.MonthlyResp[site][Month] = 0.0;
                     SiteVars.MonthlyStreamN[site][Month] = 0.0;
+                    SiteVars.MonthlyLAI[site][Month] = 0.0;
                     SiteVars.SourceSink[site].Carbon = 0.0;
                     SiteVars.TotalWoodBiomass[site] = Main.ComputeWoodBiomass((ActiveSite) site);
                     //SiteVars.LAI[site] = Century.ComputeLAI((ActiveSite)site);

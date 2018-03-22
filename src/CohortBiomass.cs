@@ -172,11 +172,13 @@ namespace Landis.Extension.Succession.NECN_Hydro
 
             double limitLAI = calculateLAI_Limit(cohort, site);
 
+            var competition_limit = calculateCompetition_Limit(cohort, site);
+
             // Removed capacity limit and altered growth mortality to limit biomass instead.  -ML & RS in 1/2018
             //double limitCapacity = 1.0 - Math.Min(1.0, Math.Exp(siteBiomass / maxBiomass * 5.0) / Math.Exp(5.0));
 
-            double potentialNPP_NoN = maxNPP * limitLAI * limitH20 * limitT; // * limitCapacity;
-            //double potentialNPP = maxNPP * limitLAI * limitH20 * limitT * limitCapacity;
+            //double potentialNPP_NoN = maxNPP * limitLAI * limitH20 * limitT; // * limitCapacity;
+            double potentialNPP_NoN = maxNPP * limitLAI * limitH20 * limitT * competition_limit;
 
             double limitN = calculateN_Limit(site, cohort, potentialNPP_NoN, leafFractionNPP);
 
@@ -218,7 +220,7 @@ namespace Landis.Extension.Succession.NECN_Hydro
             if (PlugIn.ModelCore.CurrentTime > 0 && OtherData.CalibrateMode)
             {
                 //Outputs.CalibrateLog.Write("{0:0.00},{1:0.00},{2:0.00},{3:0.00}, {4:0.00},", limitLAI, limitH20, limitT, limitCapacity, limitN);
-                Outputs.CalibrateLog.Write("{0:0.00},{1:0.00},{2:0.00},{3:0.00},", limitLAI, limitH20, limitT, limitN);
+                Outputs.CalibrateLog.Write("{0:0.00},{1:0.00},{2:0.00},{3:0.00},{4:0.00},", limitLAI, limitH20, limitT, limitN, competition_limit);
                 Outputs.CalibrateLog.Write("{0},{1},{2},{3:0.0},{4:0.0},", maxNPP, maxBiomass, (int)siteBiomass, (cohort.WoodBiomass + cohort.LeafBiomass), SiteVars.SoilTemperature[site]);
                 Outputs.CalibrateLog.Write("{0:0.00},{1:0.00},", woodNPP, leafNPP);
             }
@@ -575,7 +577,20 @@ namespace Landis.Extension.Succession.NECN_Hydro
 
             if(Main.Month == 6)
                 SiteVars.LAI[site] += lai; //Tracking LAI.
+            
+            // **************************************************************
+            // LAI Limit from older cohorts:
 
+
+            // double current_other_LAI = SiteVars.LAI_Monthly[site];
+            
+            // RMS:LAI
+            // double LAI_limit_other = BEER'S LAW EQUATION HERE using current_other_LAI
+             SiteVars.MonthlyLAI[site][Main.Month] += lai;
+
+
+            // **************************************************************
+            // LAI Limit from the cohort itself:
             double LAI_limit = Math.Max(0.0, 1.0 - Math.Exp(laitop * lai));
 
             //This allows LAI to go to zero for deciduous trees.
@@ -589,6 +604,10 @@ namespace Landis.Extension.Succession.NECN_Hydro
 
             if (PlugIn.ModelCore.CurrentTime > 0 && OtherData.CalibrateMode)
                 Outputs.CalibrateLog.Write("{0:0.00},{1:0.00},{2:0.00},", lai, tlai, rlai);
+                
+            // **********************************************************
+            // RMS:LAI:  Combine the two LAI limits here.  
+            // ?? Multiply the two limits?  User the largest?  Other?
 
 
             //PlugIn.ModelCore.UI.WriteLine("Yr={0},Mo={1}. Spp={2}, leafC={3:0.0}, woodC={4:0.00}.", PlugIn.ModelCore.CurrentTime, month + 1, species.Name, leafC, largeWoodC);
@@ -599,6 +618,19 @@ namespace Landis.Extension.Succession.NECN_Hydro
 
         }
 
+
+        private static double calculateCompetition_Limit(ICohort cohort, ActiveSite site)
+        {      
+           double k = -0.14;  // This is the value given for all temperature ecosystems. Istarted with 0.1
+           double monthly_cumulative_LAI = SiteVars.MonthlyLAI[site][Main.Month];
+           double competition_limit = Math.Max(0.0, Math.Exp(k * monthly_cumulative_LAI));
+
+           if (PlugIn.ModelCore.CurrentTime > 0 && OtherData.CalibrateMode)
+               Outputs.CalibrateLog.Write("{0:0.00},", monthly_cumulative_LAI);
+
+           return competition_limit;
+
+        }
         //---------------------------------------------------------------------------
         //... Originally from pprdwc(wc,x,pprpts) of CENTURY
 
