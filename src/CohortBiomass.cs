@@ -1,4 +1,4 @@
- //  Author: Robert Scheller, Melissa Lucash
+ //  Authors: Robert Scheller, Melissa Lucash
 
 using Edu.Wisc.Forest.Flel.Util;
 using Landis.Core;
@@ -24,7 +24,6 @@ namespace Landis.Extension.Succession.NECN_Hydro
 
         //  Ecoregion where the cohort's site is located
         private IEcoregion ecoregion;
-        //public static double SpinupMortalityFraction;
         private double defoliation;
         private double defoliatedLeafBiomass;
 
@@ -64,14 +63,11 @@ namespace Landis.Extension.Succession.NECN_Hydro
             double[] actualANPP = ComputeActualANPP(cohort, site, siteBiomass, mortalityAge);
 
             //  Growth-related mortality
-            //double[] mortalityGrowth = ComputeGrowthMortality(cohort, site);
-            double[] mortalityGrowth = ComputeGrowthMortality(cohort, site, siteBiomass, actualANPP);  //New code added by ML to simulate increase in mortality as approaches max biomass
+            double[] mortalityGrowth = ComputeGrowthMortality(cohort, site, siteBiomass, actualANPP);
 
             double[] totalMortality = new double[2]{Math.Min(cohort.WoodBiomass, mortalityAge[0] + mortalityGrowth[0]), Math.Min(cohort.LeafBiomass, mortalityAge[1] + mortalityGrowth[1])};
-
             double nonDisturbanceLeafFall = totalMortality[1];
 
-            //double[] actualANPP = ComputeActualANPP(cohort, site, siteBiomass, mortalityAge);
             
             double scorch = 0.0;
             defoliatedLeafBiomass = 0.0;
@@ -172,18 +168,18 @@ namespace Landis.Extension.Succession.NECN_Hydro
 
             double limitLAI = calculateLAI_Limit(cohort, site);
 
-            var competition_limit = calculateCompetition_Limit(cohort, site);
+            double competition_limit = calculateCompetition_Limit(cohort, site);
 
             // Removed capacity limit and altered growth mortality to limit biomass instead.  -ML & RS in 1/2018
             //double limitCapacity = 1.0 - Math.Min(1.0, Math.Exp(siteBiomass / maxBiomass * 5.0) / Math.Exp(5.0));
 
             //double potentialNPP_NoN = maxNPP * limitLAI * limitH20 * limitT; // * limitCapacity;
-            double potentialNPP_NoN = maxNPP * limitLAI * limitH20 * limitT * competition_limit;
+            double potentialNPP = maxNPP * limitLAI * limitH20 * limitT * competition_limit;
 
-            double limitN = calculateN_Limit(site, cohort, potentialNPP_NoN, leafFractionNPP);
+            double limitN = calculateN_Limit(site, cohort, potentialNPP, leafFractionNPP);
 
-            //potentialNPP *= limitN;
-            double potentialNPP = potentialNPP_NoN * limitN;
+            potentialNPP *= limitN;
+            //double potentialNPP = potentialNPP_NoN * limitN;
 
             //  Age mortality is discounted from ANPP to prevent the over-
             //  estimation of growth.  ANPP cannot be negative.
@@ -220,7 +216,7 @@ namespace Landis.Extension.Succession.NECN_Hydro
             if (PlugIn.ModelCore.CurrentTime > 0 && OtherData.CalibrateMode)
             {
                 //Outputs.CalibrateLog.Write("{0:0.00},{1:0.00},{2:0.00},{3:0.00}, {4:0.00},", limitLAI, limitH20, limitT, limitCapacity, limitN);
-                Outputs.CalibrateLog.Write("{0:0.00},{1:0.00},{2:0.00},{3:0.00},{4:0.00},", limitLAI, limitH20, limitT, limitN, competition_limit);
+                Outputs.CalibrateLog.Write("{0:0.00},{1:0.00},{2:0.00},{3:0.00},", limitLAI, limitH20, limitT, limitN, competition_limit);
                 Outputs.CalibrateLog.Write("{0},{1},{2},{3:0.0},{4:0.0},", maxNPP, maxBiomass, (int)siteBiomass, (cohort.WoodBiomass + cohort.LeafBiomass), SiteVars.SoilTemperature[site]);
                 Outputs.CalibrateLog.Write("{0:0.00},{1:0.00},", woodNPP, leafNPP);
             }
@@ -287,17 +283,18 @@ namespace Landis.Extension.Succession.NECN_Hydro
             //double NPPwood = (double)AGNPP[0] * 0.47;
             double NPPwood = (double)AGNPP[0];
 
-            //double M_wood_input = cohort.WoodBiomass * FunctionalType.Table[SpeciesData.FuncType[cohort.Species]].MonthlyWoodMortality;
+            double M_wood_fixed = cohort.WoodBiomass * FunctionalType.Table[SpeciesData.FuncType[cohort.Species]].MonthlyWoodMortality;
             double M_leaf = 0.0;
 
             double relativeBiomass = siteBiomass / maxBiomass;
             double M_constant = 5.0;  //This constant controls the rate of change of mortality with NPP
 
             //Functon which calculates an adjustment factor for mortality that ranges from 0 to 1 and exponentially increases with relative biomass.
-            double M_wood_relative = Math.Max(0.0,(Math.Exp(M_constant * relativeBiomass) - 1) / (Math.Exp(M_constant) - 1));
-
+            double M_wood_NPP = Math.Max(0.0,(Math.Exp(M_constant * relativeBiomass) - 1.0) / (Math.Exp(M_constant) - 1.0));
+            M_wood_NPP = Math.Min(M_wood_NPP, 1.0);
+            
             //This function calculates mortality as a function of NPP 
-            double M_wood = NPPwood * M_wood_relative;
+            double M_wood = (NPPwood * M_wood_NPP) + M_wood_fixed;
 
             // Leaves and Needles dropped.
             if(SpeciesData.LeafLongevity[cohort.Species] > 1.0) 
@@ -539,7 +536,7 @@ namespace Landis.Extension.Succession.NECN_Hydro
                 rlai = 1.0;
             }
 
-            double tlai =(maxlai * largeWoodC)/(klai + largeWoodC);
+            double tlai = maxlai * largeWoodC/(klai + largeWoodC);
 
             //PlugIn.ModelCore.UI.WriteLine("maxlai={0}, largeWoodC={1}, klai={2}, tlai={3:0.00}.", maxlai, largeWoodC, klai, tlai);
 
@@ -575,22 +572,6 @@ namespace Landis.Extension.Succession.NECN_Hydro
             //if (lai < 0.5) lai = 0.5;
             if (lai < 0.1) lai = 0.1;
 
-            if(Main.Month == 6)
-                SiteVars.LAI[site] += lai; //Tracking LAI.
-            
-            // **************************************************************
-            // LAI Limit from older cohorts:
-
-
-            // double current_other_LAI = SiteVars.LAI_Monthly[site];
-            
-            // RMS:LAI
-            // double LAI_limit_other = BEER'S LAW EQUATION HERE using current_other_LAI
-             SiteVars.MonthlyLAI[site][Main.Month] += lai;
-
-
-            // **************************************************************
-            // LAI Limit from the cohort itself:
             double LAI_limit = Math.Max(0.0, 1.0 - Math.Exp(laitop * lai));
 
             //This allows LAI to go to zero for deciduous trees.
@@ -601,14 +582,14 @@ namespace Landis.Extension.Succession.NECN_Hydro
                 lai = 0.0;
                 LAI_limit = 0.0;
             }
+            
+            if(Main.Month == 6)
+                SiteVars.LAI[site] += lai; //Tracking LAI.
+                
+             SiteVars.MonthlyLAI[site][Main.Month] += lai;
 
             if (PlugIn.ModelCore.CurrentTime > 0 && OtherData.CalibrateMode)
                 Outputs.CalibrateLog.Write("{0:0.00},{1:0.00},{2:0.00},", lai, tlai, rlai);
-                
-            // **********************************************************
-            // RMS:LAI:  Combine the two LAI limits here.  
-            // ?? Multiply the two limits?  User the largest?  Other?
-
 
             //PlugIn.ModelCore.UI.WriteLine("Yr={0},Mo={1}. Spp={2}, leafC={3:0.0}, woodC={4:0.00}.", PlugIn.ModelCore.CurrentTime, month + 1, species.Name, leafC, largeWoodC);
             //PlugIn.ModelCore.UI.WriteLine("Yr={0},Mo={1}. Spp={2}, lai={3:0.0}, woodC={4:0.00}.", PlugIn.ModelCore.CurrentTime, month + 1, species.Name, lai, largeWoodC);
@@ -621,12 +602,12 @@ namespace Landis.Extension.Succession.NECN_Hydro
 
         private static double calculateCompetition_Limit(ICohort cohort, ActiveSite site)
         {      
-           double k = -0.14;  // This is the value given for all temperature ecosystems. Istarted with 0.1
+           double k = -0.14;  // This is the value given for all temperature ecosystems. I started with 0.1
            double monthly_cumulative_LAI = SiteVars.MonthlyLAI[site][Main.Month];
            double competition_limit = Math.Max(0.0, Math.Exp(k * monthly_cumulative_LAI));
 
-           if (PlugIn.ModelCore.CurrentTime > 0 && OtherData.CalibrateMode)
-               Outputs.CalibrateLog.Write("{0:0.00},", monthly_cumulative_LAI);
+           //if (PlugIn.ModelCore.CurrentTime > 0 && OtherData.CalibrateMode)
+           //    Outputs.CalibrateLog.Write("{0:0.00},", monthly_cumulative_LAI);
 
            return competition_limit;
 
