@@ -39,10 +39,6 @@ namespace Landis.Extension.Succession.NECN_Hydro
                 //PlugIn.ModelCore.UI.WriteLine("PlugIn_FutureClimateBaseYear={0}, y={1}, ModelCore_CurrentTime={2}, CenturyTimeStep = {3}, SimulatedYear = {4}.", PlugIn.FutureClimateBaseYear, y, PlugIn.ModelCore.CurrentTime, years, (PlugIn.FutureClimateBaseYear + y - years + PlugIn.ModelCore.CurrentTime));
 
                 SiteVars.ResetAnnualValues(site);
-                // RMS:LAI SiteVars.LAI_Monthly[site] = 0.0;
-
-                if(y == 0 && SiteVars.FireSeverity != null && SiteVars.FireSeverity[site] > 0)
-                    FireEffects.ReduceLayers(SiteVars.FireSeverity[site], site);
 
                 // Next, Grow and Decompose each month
                 int[] months = new int[12]{6, 7, 8, 9, 10, 11, 0, 1, 2, 3, 4, 5};
@@ -128,7 +124,7 @@ namespace Landis.Extension.Succession.NECN_Hydro
                     SiteVars.MonthlyNEE[site][Month] -= SiteVars.MonthlyBGNPPcarbon[site][Month];
                     SiteVars.MonthlyNEE[site][Month] += SiteVars.SourceSink[site].Carbon;
                     SiteVars.FineFuels[site] = (SiteVars.SurfaceStructural[site].Carbon + SiteVars.SurfaceMetabolic[site].Carbon) * 2.0;
-
+                    //SiteVars.FineFuels[site] = (System.Math.Min(1.0, (double) (PlugIn.ModelCore.CurrentTime - SiteVars.HarvestTime[site]) * 0.1));
                 }
             }
 
