@@ -31,10 +31,6 @@ namespace Landis.Extension.Succession.NECN_Hydro
         public const double FractionSOM2toCO2 = 0.55;
         public const double FractionSOM3toCO2 = 0.55;
 
-        //> Base DecayRate SOM2 (DEC5) and SOM3 (DEC4)
-        //public const double DecayRateSOM2 = 0.2;  // ffix.100 = 0.2  Now an input parameter
-        //public const double DecayRateSOM3 = 0.0045;  // Now an input parameter
-
         public const double StructuralCN = 200;  // (RCESTR)
 
         // ANIMPT - Slope term used to vary the impact of soil anaerobic conditions on
@@ -63,8 +59,6 @@ namespace Landis.Extension.Succession.NECN_Hydro
         // 'PPRPTS(3)': The lowest ratio of available water to PET at which there is no restriction on production.
         // Values from ffix.100 file.
         public const double MoistureCurve1 = 0.0;
-        //public const double PPRPTS2 = 0.5; //1.0;  // NOW a functional group parameter
-        //public const double PPRPTS3 = 0.5; //0.8;
 
         // RAD1P:  C / N ratio of slow SOM formed from surface active pool.
         // Minimum allowable C / N used to calculate addition term for C / N
@@ -105,8 +99,6 @@ namespace Landis.Extension.Succession.NECN_Hydro
         //public const double OMLeachWater   = 1.9;                      // Century:  OMLECH(3)  No longer used.
         //public const double OMLeachSlope       = 0.12;                  // Century:  OMLECH(2)
         //public const double OMLeachIntercept   = 0.03;                  // Century:  OMLECH(1)
-        //public const double OMLeachSlope = -0.2;                  //Modified by ML 
-        //public const double OMLeachIntercept = 1.0;                  // Modified by ML
         public const double OMLeachSlope = 0.25;                  // Adjusted after SoilWater was revamped in 11/2014
         public const double OMLeachIntercept = 0.0;                  // No leaching when there's no sand.  Adjusted after SoilWater was revamped in 11/2014
         
@@ -171,7 +163,6 @@ namespace Landis.Extension.Succession.NECN_Hydro
         // PCEMIC(2,1) - Minimum C / N ratio for surface microbial pool.
         // PCEMIC(3,1) - Minimum N content of decomposing aboveground material,
         // above which the C / N ratio of the surface microbes equals PCEMIC(2,*).
-        // Values from the ffix.100 file.  
         
         public const double MaxCNSurfMicrobes          = 16.0;
         public const double MinCNSurfMicrobes          = 10.0;
