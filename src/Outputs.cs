@@ -1,6 +1,5 @@
 //  Author: Robert Scheller
 
-//using Landis.Cohorts;
 using Landis.Core;
 using Landis.SpatialModeling;
 using Edu.Wisc.Forest.Flel.Util;
@@ -298,8 +297,7 @@ namespace Landis.Extension.Succession.NECN_Hydro
                 pl.Time =    CurrentTime;
                 pl.ClimateRegionName =    ecoregion.Name;
                 pl.ClimateRegionIndex = ecoregion.Index;
-                
-                pl.NumSites = ClimateRegionData.ActiveSiteCount[ecoregion]; //Climate_SWHC_Count[ecoregion.Index]; // ClimateRegionData.ActiveSiteCount[ecoregion];
+                pl.NumSites = ClimateRegionData.ActiveSiteCount[ecoregion]; 
 
                     pl.NEEC = (avgNEEc[ecoregion.Index] / (double)ClimateRegionData.ActiveSiteCount[ecoregion]);
                     pl.SOMTC = (avgSOMtc[ecoregion.Index] / (double)ClimateRegionData.ActiveSiteCount[ecoregion]);
@@ -312,10 +310,10 @@ namespace Landis.Extension.Succession.NECN_Hydro
                     pl.TotalN = (avgTotalN[ecoregion.Index] / (double)ClimateRegionData.ActiveSiteCount[ecoregion]);
                     pl.GrossMineralization = (avgGrossMin[ecoregion.Index] / (double)ClimateRegionData.ActiveSiteCount[ecoregion]);
                     pl.TotalNdep = (ClimateRegionData.AnnualNDeposition[ecoregion] / (double)ClimateRegionData.ActiveSiteCount[ecoregion]);
-                    pl.C_Leaf = (avgCohortLeafC[ecoregion.Index] / (double)ClimateRegionData.ActiveSiteCount[ecoregion]);
-                    pl.C_FRoot = (avgCohortFRootC[ecoregion.Index] / (double)ClimateRegionData.ActiveSiteCount[ecoregion]);
-                    pl.C_Wood = (avgCohortWoodC[ecoregion.Index] / (double)ClimateRegionData.ActiveSiteCount[ecoregion]);
-                    pl.C_CRoot = (avgCohortCRootC[ecoregion.Index] / (double)ClimateRegionData.ActiveSiteCount[ecoregion]);
+                    pl.C_LiveLeaf = (avgCohortLeafC[ecoregion.Index] / (double)ClimateRegionData.ActiveSiteCount[ecoregion]);
+                    pl.C_LiveFRoot = (avgCohortFRootC[ecoregion.Index] / (double)ClimateRegionData.ActiveSiteCount[ecoregion]);
+                    pl.C_LiveWood = (avgCohortWoodC[ecoregion.Index] / (double)ClimateRegionData.ActiveSiteCount[ecoregion]);
+                    pl.C_LiveCRoot = (avgCohortCRootC[ecoregion.Index] / (double)ClimateRegionData.ActiveSiteCount[ecoregion]);
                     pl.C_DeadWood = (avgWoodC[ecoregion.Index] / (double)ClimateRegionData.ActiveSiteCount[ecoregion]);
                     pl.C_DeadCRoot = (avgCRootC[ecoregion.Index] / (double)ClimateRegionData.ActiveSiteCount[ecoregion]);
                     pl.C_DeadLeaf_Struc = (avgSurfStrucC[ecoregion.Index] / (double)ClimateRegionData.ActiveSiteCount[ecoregion]);
@@ -360,7 +358,6 @@ namespace Landis.Extension.Succession.NECN_Hydro
                     
                     primaryLog.AddObject(pl);
                     primaryLog.WriteToFile();
-                //}
             }
             //Reset back to zero:
             //These are being reset here because fire effects are handled in the first year of the 
@@ -422,8 +419,8 @@ namespace Landis.Extension.Succession.NECN_Hydro
 
                     ml.Time = PlugIn.ModelCore.CurrentTime;
                     ml.Month = month + 1;
-                    ml.EcoregionName = ecoregion.Name;
-                    ml.EcoregionIndex = ecoregion.Index;
+                    ml.ClimateRegionName = ecoregion.Name;
+                    ml.ClimateRegionIndex = ecoregion.Index;
 
                     ml.NumSites = Convert.ToInt32(ClimateRegionData.ActiveSiteCount[ecoregion]);
 
@@ -461,32 +458,22 @@ namespace Landis.Extension.Succession.NECN_Hydro
             }
 
             CalibrateLog.AutoFlush = true;
-
-            //CalibrateLog.Write("Year, Month, EcoregionIndex, SpeciesName, CohortAge, CohortWoodB, CohortLeafB, ");  // from ComputeChange
-            //CalibrateLog.Write("MortalityAGEwood, MortalityAGEleaf, ");  // from ComputeAgeMortality
-            //CalibrateLog.Write("MortalityBIOwood, MortalityBIOleaf, ");  // from ComputeGrowthMortality
-            //CalibrateLog.Write("availableWater,");  //from Water_limit
-            //CalibrateLog.Write("LAI,tlai,rlai,");  // from ComputeChange
-            //CalibrateLog.Write("mineralNalloc, resorbedNalloc, ");  // from calculateN_Limit
-            //CalibrateLog.Write("limitLAI, limitH20, limitT, limitN, ");  //from ComputeActualANPP
-            //CalibrateLog.Write("maxNPP, Bmax, Bsite, Bcohort, soilTemp, ");  //from ComputeActualANPP
-            //CalibrateLog.Write("actualWoodNPP, actualLeafNPP, ");  //from ComputeActualANPP
-            //CalibrateLog.Write("NPPwood, NPPleaf, ");  //from ComputeNPPcarbon
-            //CalibrateLog.Write("resorbedNused, mineralNused, Ndemand,");  // from AdjustAvailableN
-            //CalibrateLog.WriteLine("deltaWood, deltaLeaf, totalMortalityWood, totalMortalityLeaf, ");  // from ComputeChange
-
-            CalibrateLog.Write("Year, Month, EcoregionIndex, SpeciesName, CohortAge, CohortWoodB, CohortLeafB, ");  // from ComputeChange
+            
+            CalibrateLog.Write("Year, Month, ClimateRegionIndex, SpeciesName, CohortAge, CohortWoodB, CohortLeafB, ");  // from ComputeChange
             CalibrateLog.Write("MortalityAGEwood, MortalityAGEleaf, ");  // from ComputeAgeMortality
             CalibrateLog.Write("availableWater,");  //from Water_limit
-            CalibrateLog.Write("LAI,tlai,rlai,monthly_cumulative_LAI,");  // from ComputeChange
+            CalibrateLog.Write("LAI, tlai, rlai,");  // from ComputeChange
             CalibrateLog.Write("mineralNalloc, resorbedNalloc, ");  // from calculateN_Limit
-            CalibrateLog.Write("limitLAI, limitH20, limitT, limitN, competition_limit, ");  //from ComputeActualANPP
+            
+            // These three together:
+            CalibrateLog.Write("limitLAI, limitH20, limitT, limitN,");  //from ComputeActualANPP
             CalibrateLog.Write("maxNPP, Bmax, Bsite, Bcohort, soilTemp, ");  //from ComputeActualANPP
             CalibrateLog.Write("actualWoodNPP, actualLeafNPP, ");  //from ComputeActualANPP
+            
             CalibrateLog.Write("MortalityBIOwood, MortalityBIOleaf, ");  // from ComputeGrowthMortality
-            CalibrateLog.Write("NPPwood, NPPleaf, ");  //from ComputeNPPcarbon
+            CalibrateLog.Write("NPPwood_C, NPPleaf_C, ");  //from ComputeNPPcarbon
             CalibrateLog.Write("resorbedNused, mineralNused, Ndemand,");  // from AdjustAvailableN
-            CalibrateLog.WriteLine("deltaWood, deltaLeaf, totalMortalityWood, totalMortalityLeaf, ");  // from ComputeChange
+            CalibrateLog.WriteLine("deltaWood, deltaLeaf, totalMortalityWood, totalMortalityLeaf");  // from ComputeChange
 
             
 
@@ -512,7 +499,6 @@ namespace Landis.Extension.Succession.NECN_Hydro
                         }
                         outputRaster.WriteBufferPixel();
                     }
-                //}
             }
             //AMK: Trying out directly writing maps
                 string pathANPP = MapNames.ReplaceTemplateVars(@"NECN_Hydro\AG_NPP-{timestep}.img", PlugIn.ModelCore.CurrentTime);
@@ -535,8 +521,6 @@ namespace Landis.Extension.Succession.NECN_Hydro
 
                 }
             
-            //if (PlugIn.SoilCarbonMapNames != null)
-            //    {
                     string path = MapNames.ReplaceTemplateVars(@"NECN_Hydro\SOMTC-{timestep}.img", PlugIn.ModelCore.CurrentTime);
                     using (IOutputRaster<IntPixel> outputRaster = PlugIn.ModelCore.CreateRaster<IntPixel>(path, PlugIn.ModelCore.Landscape.Dimensions))
                     {
@@ -555,10 +539,7 @@ namespace Landis.Extension.Succession.NECN_Hydro
                             outputRaster.WriteBufferPixel();
                         }
                     }
-                //}
-
-                //if (PlugIn.SoilNitrogenMapNames != null)
-                //{
+            
                     string path2 = MapNames.ReplaceTemplateVars(@"NECN_Hydro\SoilN-{timestep}.img", PlugIn.ModelCore.CurrentTime);
                     using (IOutputRaster<ShortPixel> outputRaster = PlugIn.ModelCore.CreateRaster<ShortPixel>(path2, PlugIn.ModelCore.Landscape.Dimensions))
                     {
@@ -693,7 +674,7 @@ namespace Landis.Extension.Succession.NECN_Hydro
                     {
                         if (site.IsActive)
                         {
-                            pixel.MapCode.Value = (int)SiteVars.SurfaceDeadWood[site].Carbon * 2;
+                            pixel.MapCode.Value = (int) (SiteVars.SurfaceDeadWood[site].Carbon * 2.0);
                         }
                         else
                         {
@@ -712,8 +693,7 @@ namespace Landis.Extension.Succession.NECN_Hydro
                     {
                         if (site.IsActive)
                         {
-                            pixel.MapCode.Value = (int)(SiteVars.SOM1surface[site].Carbon + SiteVars.SurfaceStructural[site].Carbon +
-                    SiteVars.SurfaceMetabolic[site].Carbon) * 2;
+                            pixel.MapCode.Value = (int)((SiteVars.SurfaceStructural[site].Carbon + SiteVars.SurfaceMetabolic[site].Carbon) * 2.0);
 ;
                         }
                         else
@@ -725,6 +705,24 @@ namespace Landis.Extension.Succession.NECN_Hydro
                     }
                 }
 
+                string pathDuff = MapNames.ReplaceTemplateVars(@"NECN_Hydro\SurfaceDuffBiomass-{timestep}.img", PlugIn.ModelCore.CurrentTime);
+                using (IOutputRaster<IntPixel> outputRaster = PlugIn.ModelCore.CreateRaster<IntPixel>(pathDuff, PlugIn.ModelCore.Landscape.Dimensions))
+                {
+                    IntPixel pixel = outputRaster.BufferPixel;
+                    foreach (Site site in PlugIn.ModelCore.Landscape.AllSites)
+                    {
+                        if (site.IsActive)
+                        {
+                            pixel.MapCode.Value = (int)(SiteVars.SOM1surface[site].Carbon * 2.0);
+                        }
+                        else
+                        {
+                            //  Inactive site
+                            pixel.MapCode.Value = 0;
+                        }
+                        outputRaster.WriteBufferPixel();
+                    }
+                }
             }
         }
         
