@@ -22,16 +22,6 @@ namespace Landis.Extension.Succession.NECN_Hydro
         public static readonly string ExtensionName = "NECN_Hydro Succession";
         private static ICore modelCore;
         public static IInputParameters Parameters;
-        //public static double AtmosNslope;
-        //public static double AtmosNintercept;
-        //public static double Latitude;
-        //public static double DenitrificationRate;
-        //public static double DecayRateSurf;
-        //public static double DecayRateSOM1;
-        //public static double DecayRateSOM2;
-        //public static double DecayRateSOM3;
-        //public static List<int> SWHC_List = new List<int>(0);
-        //public static int[] SWHC_Count;
         public static double[] ShadeLAI;
         public static double AnnualWaterBalance;
 
@@ -46,8 +36,6 @@ namespace Landis.Extension.Succession.NECN_Hydro
         public static int ANEEMapFrequency;
         public static string TotalCMapNames = null;
         public static int TotalCMapFrequency;
-        //public static int ShadeClassMapNames = null;
-        //public static int ShadeClassMapFrequency;
         public static int SuccessionTimeStep;
         public static double ProbEstablishAdjust;
 
@@ -100,7 +88,7 @@ namespace Landis.Extension.Succession.NECN_Hydro
             Climate.Initialize(Parameters.ClimateConfigFile, false, modelCore);
             FutureClimateBaseYear = Climate.Future_MonthlyData.Keys.Min();
             
-            ClimateRegionData.Initialize(Parameters);
+            FunctionalType.Initialize(Parameters);
             SpeciesData.Initialize(Parameters);
             Util.ReadSoilDepthMap(Parameters.SoilDepthMapName);
             Util.ReadSoilDrainMap(Parameters.SoilDrainMapName);
@@ -120,18 +108,13 @@ namespace Landis.Extension.Succession.NECN_Hydro
                 Parameters.InitialSOM3NMapName);
             Util.ReadDeadWoodMaps(Parameters.InitialDeadSurfaceMapName, Parameters.InitialDeadSoilMapName);
 
-            //AtmosNslope = parameters.AtmosNslope;
-            //AtmosNintercept = parameters.AtmosNintercept;
-            //Latitude = parameters.Latitude;
-            //DenitrificationRate = parameters.Denitrif;
-            //DecayRateSurf = parameters.DecayRateSurf;
-            //DecayRateSOM1 = parameters.DecayRateSOM1;
-            //DecayRateSOM2 = parameters.DecayRateSOM2;
-            //DecayRateSOM3 = parameters.DecayRateSOM3;
+            //Initialize climate.
+            Climate.Initialize(Parameters.ClimateConfigFile, false, modelCore);
+            FutureClimateBaseYear = Climate.Future_MonthlyData.Keys.Min();
+            ClimateRegionData.Initialize(Parameters);
 
-            ShadeLAI = Parameters.MaximumShadeLAI; //.MinRelativeBiomass;
+            ShadeLAI = Parameters.MaximumShadeLAI; 
             OtherData.Initialize(Parameters);
-            FunctionalType.Initialize(Parameters);
             FireEffects.Initialize(Parameters);
 
             //  Cohorts must be created before the base class is initialized
@@ -145,11 +128,12 @@ namespace Landis.Extension.Succession.NECN_Hydro
             Reproduction.AddNewCohort = AddNewCohort;
             Reproduction.MaturePresent = MaturePresent;
             base.Initialize(modelCore, Parameters.SeedAlgorithm);
+            
+            // Delegate mortality routines:
             Landis.Library.LeafBiomassCohorts.Cohort.PartialDeathEvent += CohortPartialMortality;
-            Landis.Library.BiomassCohorts.Cohort.DeathEvent += CohortDied;
-            AgeOnlyDisturbances.Module.Initialize(Parameters.AgeOnlyDisturbanceParms);
+            Landis.Library.LeafBiomassCohorts.Cohort.DeathEvent += CohortTotalMortality;
 
-            //InitialBiomass.Initialize(Timestep);
+            
             InitializeSites(Parameters.InitialCommunities, Parameters.InitialCommunitiesMap, modelCore); 
             
             if (Parameters.CalibrateMode)
@@ -180,7 +164,7 @@ namespace Landis.Extension.Succession.NECN_Hydro
             if (PlugIn.ModelCore.CurrentTime > 0)
                     SiteVars.InitializeDisturbances();
 
-            ClimateRegionData.AnnualNDeposition = new Ecoregions.AuxParm<double>(PlugIn.ModelCore.Ecoregions);
+            ClimateRegionData.AnnualNDeposition = new Landis.Library.Parameters.Ecoregions.AuxParm<double>(PlugIn.ModelCore.Ecoregions);
 
             //base.RunReproductionFirst();
 
@@ -253,75 +237,137 @@ namespace Landis.Extension.Succession.NECN_Hydro
 
 
         //---------------------------------------------------------------------
-
+        // This method does not trigger reproduction
         public void CohortPartialMortality(object sender, Landis.Library.BiomassCohorts.PartialDeathEventArgs eventArgs)
         {
+            //PlugIn.ModelCore.UI.WriteLine("Cohort Partial Mortality:  {0}", eventArgs.Site);
+
             ExtensionType disturbanceType = eventArgs.DisturbanceType;
             ActiveSite site = eventArgs.Site;
-            double reduction = eventArgs.Reduction;
 
             ICohort cohort = (Landis.Library.LeafBiomassCohorts.ICohort)eventArgs.Cohort;
 
-            float fractionPartialMortality = (float)eventArgs.Reduction;
-            //PlugIn.ModelCore.UI.WriteLine("Cohort experienced partial mortality: species={0}, age={1}, wood_biomass={2}, fraction_mortality={3:0.0}.", cohort.Species.Name, cohort.Age, cohort.WoodBiomass, fractionPartialMortality);
+            float fractionPartialMortality = (float) eventArgs.Reduction;
+            float foliarInput = cohort.LeafBiomass * fractionPartialMortality;
+            float woodInput = cohort.WoodBiomass * fractionPartialMortality;
 
-            AgeOnlyDisturbances.PoolPercentages cohortReductions = AgeOnlyDisturbances.Module.Parameters.CohortReductions[disturbanceType];
+            if (disturbanceType.IsMemberOf("disturbance:harvest"))
+            {
+                SiteVars.HarvestPrescriptionName = PlugIn.ModelCore.GetSiteVar<string>("Harvest.PrescriptionName");
+                if (!Disturbed[site]) // this is the first cohort killed/damaged
+                {
+                    HarvestEffects.ReduceLayers(SiteVars.HarvestPrescriptionName[site], site);
+                }
+                woodInput -= woodInput * (float) HarvestEffects.GetCohortWoodRemoval(site);
+                foliarInput -= foliarInput * (float) HarvestEffects.GetCohortLeafRemoval(site);
+            }
+            if (disturbanceType.IsMemberOf("disturbance:fire"))
+            {
 
-            float foliar = cohort.LeafBiomass * fractionPartialMortality;
-            float wood = cohort.WoodBiomass * fractionPartialMortality;
+                SiteVars.FireSeverity = PlugIn.ModelCore.GetSiteVar<byte>("Fire.Severity");
 
-            float foliarInput = AgeOnlyDisturbances.Events.ReduceInput(foliar, cohortReductions.Foliar, site);
-            float woodInput = AgeOnlyDisturbances.Events.ReduceInput(wood, cohortReductions.Wood, site);
+                if (!Disturbed[site]) // this is the first cohort killed/damaged
+                {
+                    SiteVars.SmolderConsumption[site] = 0.0;
+                    SiteVars.FlamingConsumption[site] = 0.0;
+                    if (SiteVars.FireSeverity != null && SiteVars.FireSeverity[site] > 0)
+                        FireEffects.ReduceLayers(SiteVars.FireSeverity[site], site);
+
+                }
+
+                double woodFireConsumption = woodInput * (float)FireEffects.ReductionsTable[(int)SiteVars.FireSeverity[site]].CoarseLitterReduction;
+                double foliarFireConsumption = foliarInput * (float)FireEffects.ReductionsTable[(int)SiteVars.FireSeverity[site]].FineLitterReduction;
+
+                SiteVars.SmolderConsumption[site] += woodFireConsumption;
+                SiteVars.FlamingConsumption[site] += foliarFireConsumption;
+                woodInput -= (float) woodFireConsumption;
+                foliarInput -= (float) foliarFireConsumption;
+            }
 
             ForestFloor.AddWoodLitter(woodInput, cohort.Species, site);
             ForestFloor.AddFoliageLitter(foliarInput, cohort.Species, site);
 
-            Roots.AddCoarseRootLitter(woodInput, cohort, cohort.Species, site);  // All of cohorts roots are killed.
-            Roots.AddFineRootLitter(foliarInput, cohort, cohort.Species, site);
+            Roots.AddCoarseRootLitter(Roots.CalculateCoarseRoot(cohort, cohort.WoodBiomass * fractionPartialMortality), cohort, cohort.Species, site); 
+            Roots.AddFineRootLitter(Roots.CalculateFineRoot(cohort, cohort.LeafBiomass * fractionPartialMortality), cohort, cohort.Species, site);
 
             //PlugIn.ModelCore.UI.WriteLine("EVENT: Cohort Partial Mortality: species={0}, age={1}, disturbance={2}.", cohort.Species.Name, cohort.Age, disturbanceType);
-            //PlugIn.ModelCore.UI.WriteLine("       Cohort Reductions:  Foliar={0:0.00}.  Wood={1:0.00}.", cohortReductions.Foliar, cohortReductions.Wood);
-            //PlugIn.ModelCore.UI.WriteLine("       InputB/TotalB:  Foliar={0:0.00}/{1:0.00}, Wood={2:0.0}/{3:0.0}.", foliarInput, foliar, woodInput, wood);
-
+            //PlugIn.ModelCore.UI.WriteLine("       Cohort Reductions:  Foliar={0:0.00}.  Wood={1:0.00}.", HarvestEffects.GetCohortLeafRemoval(site), HarvestEffects.GetCohortLeafRemoval(site));
+            //PlugIn.ModelCore.UI.WriteLine("       InputB/TotalB:  Foliar={0:0.00}/{1:0.00}, Wood={2:0.0}/{3:0.0}.", foliarInput, cohort.LeafBiomass, woodInput, cohort.WoodBiomass);
+            Disturbed[site] = true;
+            
             return;
         }
         //---------------------------------------------------------------------
+        // Total mortality, including from disturbance or senescence.
 
-        public void CohortDied(object         sender,
-                               Landis.Library.BiomassCohorts.DeathEventArgs eventArgs)
+        public void CohortTotalMortality(object sender, Landis.Library.BiomassCohorts.DeathEventArgs eventArgs)
         {
 
-            //PlugIn.ModelCore.UI.WriteLine("Cohort Died! :-(");
+            //PlugIn.ModelCore.UI.WriteLine("Cohort Total Mortality: {0}", eventArgs.Site);
 
             ExtensionType disturbanceType = eventArgs.DisturbanceType;
             ActiveSite site = eventArgs.Site;
 
             ICohort cohort = (Landis.Library.LeafBiomassCohorts.ICohort) eventArgs.Cohort;
-            double foliar = (double) cohort.LeafBiomass;
+            double foliarInput = (double) cohort.LeafBiomass;
+            double woodInput = (double) cohort.WoodBiomass;
 
-            double wood = (double) cohort.WoodBiomass;
-
-            //PlugIn.ModelCore.UI.WriteLine("Cohort Died: species={0}, age={1}, biomass={2}, foliage={3}.", cohort.Species.Name, cohort.Age, cohort.Biomass, foliar);
-
-            if (disturbanceType == null) {
-                //PlugIn.ModelCore.UI.WriteLine("NO EVENT: Cohort Died: species={0}, age={1}, disturbance={2}.", cohort.Species.Name, cohort.Age, eventArgs.DisturbanceType);
-
-                ForestFloor.AddWoodLitter(wood, cohort.Species, eventArgs.Site);
-                ForestFloor.AddFoliageLitter(foliar, cohort.Species, eventArgs.Site);
-
-                Roots.AddCoarseRootLitter(wood, cohort, cohort.Species, eventArgs.Site);
-                Roots.AddFineRootLitter(foliar, cohort,  cohort.Species, eventArgs.Site);
-            }
-
-            if (disturbanceType != null) {
+            if (disturbanceType != null)
+            {
                 //PlugIn.ModelCore.UI.WriteLine("DISTURBANCE EVENT: Cohort Died: species={0}, age={1}, disturbance={2}.", cohort.Species.Name, cohort.Age, eventArgs.DisturbanceType);
 
-                Disturbed[site] = true;
                 if (disturbanceType.IsMemberOf("disturbance:fire"))
+                {
+                    SiteVars.FireSeverity = PlugIn.ModelCore.GetSiteVar<byte>("Fire.Severity");
                     Landis.Library.Succession.Reproduction.CheckForPostFireRegen(eventArgs.Cohort, site);
+
+                    if (!Disturbed[site])  // the first cohort killed/damaged
+                    {
+                        SiteVars.SmolderConsumption[site] = 0.0;
+                        SiteVars.FlamingConsumption[site] = 0.0;
+                        if (SiteVars.FireSeverity != null && SiteVars.FireSeverity[site] > 0)
+                            FireEffects.ReduceLayers(SiteVars.FireSeverity[site], site);
+
+                    }
+
+                    double woodFireConsumption = woodInput * (float)FireEffects.ReductionsTable[(int)SiteVars.FireSeverity[site]].CoarseLitterReduction;
+                    double foliarFireConsumption = foliarInput * (float)FireEffects.ReductionsTable[(int)SiteVars.FireSeverity[site]].FineLitterReduction;
+
+                    SiteVars.SmolderConsumption[site] += woodFireConsumption;
+                    SiteVars.FlamingConsumption[site] += foliarFireConsumption;
+                    woodInput -= (float)woodFireConsumption;
+                    foliarInput -= (float)foliarFireConsumption;
+                }
                 else
+                {
+                    if (disturbanceType.IsMemberOf("disturbance:harvest"))
+                    {
+                        SiteVars.HarvestPrescriptionName = PlugIn.ModelCore.GetSiteVar<string>("Harvest.PrescriptionName");
+                        if (!Disturbed[site])  // the first cohort killed/damaged
+                        {
+                            HarvestEffects.ReduceLayers(SiteVars.HarvestPrescriptionName[site], site);
+                        }
+                        woodInput -= woodInput * (float)HarvestEffects.GetCohortWoodRemoval(site);
+                        foliarInput -= foliarInput * (float)HarvestEffects.GetCohortLeafRemoval(site);
+                    }
+                    
+                    // If not fire, check for resprouting:
                     Landis.Library.Succession.Reproduction.CheckForResprouting(eventArgs.Cohort, site);
+                }
             }
+
+            //PlugIn.ModelCore.UI.WriteLine("Cohort Died: species={0}, age={1}, wood={2:0.00}, foliage={3:0.00}.", cohort.Species.Name, cohort.Age, wood, foliar);
+            ForestFloor.AddWoodLitter(woodInput, cohort.Species, eventArgs.Site);
+            ForestFloor.AddFoliageLitter(foliarInput, cohort.Species, eventArgs.Site);
+
+            // Assume that ALL dead root biomass stays on site.
+            Roots.AddCoarseRootLitter(Roots.CalculateCoarseRoot(cohort, cohort.WoodBiomass), cohort, cohort.Species, eventArgs.Site);
+            Roots.AddFineRootLitter(Roots.CalculateFineRoot(cohort, cohort.LeafBiomass), cohort, cohort.Species, eventArgs.Site);
+
+            if (disturbanceType != null)
+                Disturbed[site] = true;
+
+            return;
         }
 
         //---------------------------------------------------------------------
@@ -389,9 +435,7 @@ namespace Landis.Extension.Succession.NECN_Hydro
         /// </summary>
         public bool Establish(ISpecies species, ActiveSite site)
         {
-            //IEcoregion ecoregion = modelCore.Ecoregion[site];
-            //double establishProbability = SpeciesData.EstablishProbability[species][ecoregion];
-            double establishProbability = Establishment.Calculate(species, site);// SpeciesData.EstablishProbability[species][ecoregion];
+            double establishProbability = Establishment.Calculate(species, site);
 
             return modelCore.GenerateUniform() < establishProbability;
         }
@@ -405,7 +449,7 @@ namespace Landis.Extension.Succession.NECN_Hydro
         public bool PlantingEstablish(ISpecies species, ActiveSite site)
         {
             IEcoregion ecoregion = modelCore.Ecoregion[site];
-            double establishProbability = Establishment.Calculate(species, site); //, Timestep); // SpeciesData.EstablishProbability[species][ecoregion];
+            double establishProbability = Establishment.Calculate(species, site); 
 
             return establishProbability > 0.0;
         }
@@ -419,6 +463,42 @@ namespace Landis.Extension.Succession.NECN_Hydro
         public bool MaturePresent(ISpecies species, ActiveSite site)
         {
             return SiteVars.Cohorts[site].IsMaturePresent(species);
+        }
+        
+        //---------------------------------------------------------------------
+        // Outmoded but required?
+
+        public static void SiteDisturbed(object sender,
+                                         Landis.Library.BiomassCohorts.DisturbanceEventArgs eventArgs)
+        {
+            PlugIn.ModelCore.UI.WriteLine("  Calculating Fire or Harvest Effects.");
+
+            ExtensionType disturbanceType = eventArgs.DisturbanceType;
+            ActiveSite site = eventArgs.Site;
+
+            if (disturbanceType.IsMemberOf("disturbance:fire"))
+            {
+                SiteVars.FireSeverity = PlugIn.ModelCore.GetSiteVar<byte>("Fire.Severity");
+                if (SiteVars.FireSeverity != null && SiteVars.FireSeverity[site] > 0)
+                    FireEffects.ReduceLayers(SiteVars.FireSeverity[site], site);
+            }
+            if (disturbanceType.IsMemberOf("disturbance:harvest"))
+            {
+                HarvestEffects.ReduceLayers(SiteVars.HarvestPrescriptionName[site], site);
+            }
+        }
+
+        //---------------------------------------------------------------------
+
+        public static float ReduceInput(float poolInput,
+                                          Percentage reductionPercentage,
+                                          ActiveSite site)
+        {
+            float reduction = (poolInput * (float)reductionPercentage);
+
+            SiteVars.SourceSink[site].Carbon += (double)reduction * 0.47;
+
+            return (poolInput - reduction);
         }
 
     }
